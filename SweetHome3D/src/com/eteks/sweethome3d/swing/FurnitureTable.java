@@ -750,8 +750,20 @@ public class FurnitureTable extends JTable implements View, Printable {
           return headerRendererLabel;
         }
       };
+    List<TableColumn> printedColumns = new ArrayList<TableColumn>();
     for (int columnIndex = 0, n = columnModel.getColumnCount(); columnIndex < n; columnIndex++) {
-      final TableColumn tableColumn = columnModel.getColumn(columnIndex);
+      printedColumns.add(columnModel.getColumn(columnIndex));
+    }
+    // Print Level column at the end when home contains more than one level and this column isn't displayed,
+    // so the furniture of each level can be distinguished (displayed columns are left unchanged)
+    Home home = (Home)((FurnitureTreeTableModel)getModel()).getRoot();
+    if (home.getLevels().size() > 1
+        && columnModel instanceof FurnitureTableColumnModel
+        && !home.getFurnitureVisibleProperties().contains(HomePieceOfFurniture.SortableProperty.LEVEL)) {
+      printedColumns.add(((FurnitureTableColumnModel)columnModel).getAvailableColumn(
+          HomePieceOfFurniture.SortableProperty.LEVEL));
+    }
+    for (final TableColumn tableColumn : printedColumns) {
       // Create a printable column from existing table column
       TableColumn printableColumn = new TableColumn();
       printableColumn.setIdentifier(tableColumn.getIdentifier());
@@ -1015,6 +1027,13 @@ public class FurnitureTable extends JTable implements View, Printable {
       addHomeListener(home);
       addLanguageListener(preferences);
       updateModelColumns(home.getFurnitureVisibleProperties());
+    }
+
+    /**
+     * Returns the column matching the given <code>property</code>, even if it's not displayed.
+     */
+    public TableColumn getAvailableColumn(HomePieceOfFurniture.SortableProperty property) {
+      return this.availableColumns.get(property);
     }
 
     /**
